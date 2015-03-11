@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <title>Teste</title>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      var socket;
+      var conversationid = 1;
+      var login = "Abraao";
+
+      function load() {
+        socket = io('http://localhost:3000');
+
+        socket.on('publish', function (data) {
+          createMessage(data);
+        });
+      }
+
+      function createMessage(data){
+        var out = document.getElementById("output");
+        var cont = document.createElement("div");
+        var sender = document.createElement("b");
+        var message = document.createElement("div");
+
+        sender.innerHTML = data.sender;
+        message.innerHTML = processMessageText(data.message);
+        cont.appendChild(sender);
+        cont.appendChild(message);
+
+        cont.style["margin-top"] = "0.5em";
+        cont.style["background-color"] = "aliceblue";
+
+        out.appendChild(cont);
+      }
+
+      function processMessageText(message){
+        //message.search(/[#\w*]/)(/#.\w/g);
+        message = message.replace(/#.\w*/g, function fhref(x){
+          ref = "<a href='"+x+"'>"+x+"</a>";
+          return ref;
+        });
+
+        return message;
+      }
+
+      function send() {
+
+        socket.emit('chat', {
+            message: document.getElementById("chatbox").value,
+            sender: login,
+            conversation: conversationid
+        });
+      }
+    </script>
+
+  </head>
+
+  <body onload="load();">
+
+    <div id="output" style="height:30%;width:30%;overflow: auto;padding: 1em;"></div>
+    <textarea id="chatbox"></textarea>
+    <button onclick="send()">SEND</button>
+  </body>
+</html>
