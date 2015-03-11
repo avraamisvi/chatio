@@ -7,6 +7,16 @@ var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
+var conversations = require('./routes/conversations');
+var glob = require('glob');
+
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/chatio');
+
+var models = glob.sync('./model/*.js');
+models.forEach(function(model) {
+    require(model);
+});
 
 var app = express();
 
@@ -29,6 +39,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
+app.use('/conversations', conversations);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -62,17 +74,22 @@ app.use(function(err, req, res, next) {
 });
 
 var chatroom = require('./chatroom');
+//chatroom.init();
 
 //websocket processing
 
 socketio.on('connection', function (socket) {
 
+  socket.on('register', function (data) {
+    chatroom.register(socket, data);
+  });
+
   socket.on('chat', function (data) {
-    chatroom.receive(socket, data);
+    chatroom.receive(data);
   });
 });
 
-http.listen(3000, function(){
+http.listen(3000, function() {
   console.log('listening on *:3000');
 });
 

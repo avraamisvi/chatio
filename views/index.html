@@ -3,41 +3,185 @@
     <title>Teste</title>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/mustache/mustache.js"></script>
+
+    <script id="messagetmpl" type="x-tmpl-mustache">
+      <div class="message">
+        <b>{{sender}}</b>
+        <div class="message-text">{{&messagetext}}</div>
+      </div>
+    </script>
+
+    <script id="conversationlist" type="x-tmpl-mustache">
+      {{#conversations}}
+        <div class="conversation-item" onclick="selectConversation({{id}})">
+          {{#targets}}
+            <b style="margin-left:0.2em;margin-top:40%;">{{name}}</b><div id="msgcounter{{id}}" style="float:right;"></div>
+          {{/targets}}
+        </div>
+      {{/conversations}}
+    </script>
+
+    <script id="messageshistory" type="x-tmpl-mustache">
+      {{#messages}}
+        <div class="message">
+          <b>{{sender}}</b>
+          <div class="message-text">{{&messagetext}}</div>
+        </div>
+      {{/messages}}
+    </script>
+
+    <style>
+      .conversation-item {
+        margin-top: 0.5em;
+        background-color: lightblue;
+        width: 100%;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        padding-left: inherit;
+      }
+
+      .message {
+        margin-top: 0.5em;
+        background-color: aliceblue;
+      }
+    </style>
 
     <script>
       var socket;
+
       var conversationid = 1;
-      var login = "Abraao";
+      var conversationSelected = null;
+      var conversations;
+
+      var login = "abraao";
+
+      var conversationstmpl;
+      var messageshistory;
+      var messagetmpl;
 
       function load() {
-        socket = io('http://localhost:3000');
 
-        socket.on('publish', function (data) {
-          createMessage(data);
+        parseTemplates();
+
+        startWebSocket();
+
+        //load conversations
+        conversations();
+      }
+
+      function parseTemplates() {
+        conversationstmpl = $("#conversationlist").html();
+        Mustache.parse(conversationstmpl);
+
+        messageshistory = $("#messageshistory").html();
+        Mustache.parse(messageshistory);
+
+        messagetmpl = $("#messagetmpl").html();
+        Mustache.parse(messagetmpl);
+      }
+
+      function startWebSocket() {
+          socket = io('http://localhost:3000');
+
+          socket.on('publish', function (data) {
+            createMessage(data);
+          });
+
+          socket.on('registered', function (data) {
+
+            if(data.status == 'ok')
+              alert("registrado");
+
+          });
+
+      }
+
+      function filter(filt) {
+
+      }
+
+      function selectConversation(id){
+
+        conversationSelected = null;
+
+        clearMsgCounter(id);
+
+        for(var i = 0; i < conversations.length; i++) {
+          if(conversations[i].id == id) {
+            conversationSelected = conversations[i];
+            break;
+          }
+        }
+
+        if(conversationSelected)
+          loadHistory();
+      }
+
+      function loadHistory() {
+
+        $.post( "/conversations/history",{id:conversationSelected.id}, function( data ) {
+
+          data.messagetext = function() {
+            return processMessageText(this.message);
+          };
+
+          var rendered = Mustache.render(messageshistory, data);
+          $( "#output" ).prepend( rendered );
         });
       }
 
-      function createMessage(data){
-        var out = document.getElementById("output");
-        var cont = document.createElement("div");
-        var sender = document.createElement("b");
-        var message = document.createElement("div");
+      function conversations() {
+        $.post( "/conversations/list", function( data ) {//todo pass username
 
-        sender.innerHTML = data.sender;
-        message.innerHTML = processMessageText(data.message);
-        cont.appendChild(sender);
-        cont.appendChild(message);
+          conversations = data.conversations;
 
-        cont.style["margin-top"] = "0.5em";
-        cont.style["background-color"] = "aliceblue";
+          var rendered = Mustache.render(conversationstmpl, data);
+          $( "#conversations" ).html( rendered );
+        });
+      }
 
-        out.appendChild(cont);
+      function addMsgCounter(data) {
+        var divcnt = $("#msgcounter"+data.conversation);
+        var cnt = divcnt.attr("msgcounter");
+
+        if(cnt)
+          cnt++;
+        else
+          cnt = 1;
+
+        divcnt.attr("msgcounter", cnt);
+
+        divcnt.html(cnt);
+      }
+
+      function clearMsgCounter(id) {
+        var divcnt = $("#msgcounter"+id);
+        divcnt.attr("msgcounter", 0);
+        divcnt.html("");
+      }
+
+      function createMessage(data) {
+
+        if(!conversationSelected || conversationSelected.id != data.conversation) {
+          addMsgCounter(data);
+        } else if(conversationSelected) {
+
+          data.messagetext = function() {
+            return processMessageText(this.message);
+          };
+
+          var rendered = Mustache.render(messagetmpl, data);
+
+          $( "#output" ).append( rendered );
+
+        }
       }
 
       function processMessageText(message){
-        //message.search(/[#\w*]/)(/#.\w/g);
         message = message.replace(/#.\w*/g, function fhref(x){
-          ref = "<a href='"+x+"'>"+x+"</a>";
+          ref = "<a href='"+x+"' onclick='filter(\""+x.substring(1)+"\")'>"+x+"</a>";
           return ref;
         });
 
@@ -46,8 +190,23 @@
 
       function send() {
 
+        if(!conversationSelected)
+          return;
+
         socket.emit('chat', {
             message: document.getElementById("chatbox").value,
+            sender: login,
+            conversation: conversationSelected.id,
+            targets: conversationSelected.targets
+        });
+      }
+
+      function register() {
+
+        login = document.getElementById("username").value;
+
+        socket.emit('register', {
+            username: login,
             sender: login,
             conversation: conversationid
         });
@@ -58,8 +217,16 @@
 
   <body onload="load();">
 
+    <label for="username">Username</label>
+    <input id="username" type="text" value="abraao">
+    <button onclick="register();">register</button>
+
+    <hr style="width:100%;">
+    <br clear="all">
+
+    <div id="conversations" style="height:30%;width:20%;overflow: auto;padding: 0.3em;float:left;background-color: lightcyan;"></div>
     <div id="output" style="height:30%;width:30%;overflow: auto;padding: 1em;"></div>
-    <textarea id="chatbox"></textarea>
+    <textarea id="chatbox" style="width:50%;height:30%;"></textarea>
     <button onclick="send()">SEND</button>
   </body>
 </html>
