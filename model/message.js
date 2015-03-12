@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
 var MessageSchema = new mongoose.Schema({
-  conversation:  Number,
+  conversation: String,
   text: String,
   sender: String
 });

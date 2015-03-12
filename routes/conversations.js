@@ -22,21 +22,34 @@ router.post('/list', function(req, res, next) {//transformar em get
 
 });
 
-router.post('/create', function(req, res, next) {
+function create(req, res, Conversation) {
 
-    var Conversation = mongoose.model("Conversation");
+  var uid = uuid.v1();
+  var targs = req.body["targets[]"];
+  var userstargets = [];
 
-    var uid;
+  var data = {
+          label: labelname.trim(),
+          id: uid+"",
+          targets: userstargets
+        };
 
-    try {
-      uid = uuid.v1();
-    } catch(e) {
-      console.log(e);
+  var convers = new Conversation(data);
+
+  convers.save(function(err, result) {
+
+    if (err) {
+      console.error(err);
       return;
     }
 
-    var targs = req.body["targets[]"];
-    var userstargets = [];
+    res.send(result);
+  });
+}
+
+router.post('/create', function(req, res, next) {
+
+    var Conversation = mongoose.model("Conversation");
 
     var labelname = "";
 
@@ -46,49 +59,20 @@ router.post('/create', function(req, res, next) {
       labelname += targs[i] + " ";
     }
 
-    var data = {
-            label: labelname.trim(),
-            id: uid+"",
-            targets: userstargets
-          };
-
-    var convers = new Conversation(data);
-
-    convers.save(function(err, result) {
+    Conversation.where("label").equals("livia abraao").exec(function(err, result){
 
       if (err) {
         console.error(err);
-        return;
       }
 
-      console.log("===salvo===");
-      console.log(result);
-      res.send(result);
-    });
+      if(!result) {
+        create(req, res, Conversation);//if it not find, creates
+      } else {
+        res.send(result);
+      }
 
-});
+    })
 
-router.post('/history', function(req, res, next) {
-
-  //load from mongodb
-
-  data = {
-    messages:
-      [
-        {
-          sender:"abraao",
-          targets:["abraao", "fulano"],
-          message:"baksdjsalkdj #adsad #asdsad asdjsadj #asdsads asdksadkaslçdk"
-        },
-        {
-          sender:"fulano",
-          targets:["abraao", "fulano"],
-          message:"#baksdjsalkdj #dddd #asdsad asdjsadj #asdsads asdksadkaslçdk"
-        }
-      ]
-    };
-
-  res.send(data);
 });
 
 module.exports = router;

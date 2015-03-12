@@ -37,6 +37,17 @@ module.exports = {
   },
 
   save: function(data) {//will save async in mongodb
+    var Message = mongoose.model("Message");
+
+    var msg = new Message({
+      text: data.message,
+      conversation:  data.conversation,
+      sender: data.sender
+    });
+
+    msg.save(function(err, result){
+      if(err) console.error(err);
+    });
 
   }
 

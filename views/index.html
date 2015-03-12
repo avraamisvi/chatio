@@ -83,6 +83,8 @@
 
           var rendered = Mustache.render(userstmpl, data);
           $( "#usersselect" ).html( rendered );
+          $( "#username" ).html( rendered );
+
         });
       }
 
@@ -144,10 +146,10 @@
 
       function loadHistory() {
 
-        $.post( "/conversations/history",{id:conversationSelected.id}, function( data ) {
+        $.get( "/messages/list",{id:conversationSelected.id}, function( data ) {
 
           data.messagetext = function() {
-            return processMessageText(this.message);
+            return processMessageText(this.text);
           };
 
           var rendered = Mustache.render(messageshistory, data);
@@ -259,12 +261,14 @@
     <hr style="width:100%;">
     <br clear="all">
 
-    <label for="username">Username</label>
-    <input id="username" type="text" value="abraao">
-    <button onclick="register();">register</button>
 
+    <label for="username">Username</label>
+    <select id="username">
+    </select>
+    <button onclick="register();">register</button>
     <hr style="width:100%;">
     <br clear="all">
+
 
     <div id="conversations" style="height:30%;width:20%;overflow: auto;padding: 0.3em;float:left;background-color: lightcyan;"></div>
     <div id="output" style="height:30%;width:30%;overflow: auto;padding: 1em;"></div>
