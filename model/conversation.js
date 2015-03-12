@@ -1,7 +1,8 @@
 var mongoose = require('mongoose');
 
 var ConversationSchema = new mongoose.Schema({
-  id:  Number,
+  label: String,
+  id:  String,
   targets: [{
     name:String
   }]

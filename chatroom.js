@@ -5,32 +5,6 @@ module.exports = {
   users: {},
 
   init: function(){//temp
-    var Conversation = mongoose.model("Conversation");
-
-    var convers = new Conversation(
-      {
-        id:1,
-        targets:[{name:"abraao"}, {name:"fulano"}]
-      }
-    );
-
-    convers.save(function (err, fluffy) {
-      if (err) return console.error(err);
-    });
-
-    //-------------------------------------------------
-    
-    convers = new Conversation(
-      {
-        id:2,
-        targets:[{name:"sicrano"}, {name:"beltrano"}]
-      }
-    );
-
-    convers.save(function (err, fluffy) {
-      if (err) return console.error(err);
-    });
-
   },
 
   register: function (socket, data) {

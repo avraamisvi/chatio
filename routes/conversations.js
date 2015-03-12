@@ -1,24 +1,10 @@
 var express = require('express');
-var router = express.Router();
 var mongoose = require('mongoose');
+var uuid = require('uuid');
 
-/* GET users listing. */
-router.post('/list', function(req, res, next) {
+var router = express.Router();
 
-  /*
-    data = {
-    conversations:
-      [
-        {
-          id:1,
-          targets:[{name:"abraao"}, {name:"fulano"}]
-        },
-        {
-          id:2,
-          targets:[{name:"sicrano"}, {name:"beltrano"}]
-        }
-      ]
-    };*/
+router.post('/list', function(req, res, next) {//transformar em get
 
     var conversationDB = mongoose.model("Conversation");
     var data = {conversations:[]};
@@ -34,9 +20,52 @@ router.post('/list', function(req, res, next) {
       res.send(data);
     });
 
-    //data = { conversations: )};
+});
 
-  //res.send(data);
+router.post('/create', function(req, res, next) {
+
+    var Conversation = mongoose.model("Conversation");
+
+    var uid;
+
+    try {
+      uid = uuid.v1();
+    } catch(e) {
+      console.log(e);
+      return;
+    }
+
+    var targs = req.body["targets[]"];
+    var userstargets = [];
+
+    var labelname = "";
+
+    for(var i = 0; i < targs.length; i++) {
+      userstargets.push({name:targs[i]});
+
+      labelname += targs[i] + " ";
+    }
+
+    var data = {
+            label: labelname.trim(),
+            id: uid+"",
+            targets: userstargets
+          };
+
+    var convers = new Conversation(data);
+
+    convers.save(function(err, result) {
+
+      if (err) {
+        console.error(err);
+        return;
+      }
+
+      console.log("===salvo===");
+      console.log(result);
+      res.send(result);
+    });
+
 });
 
 router.post('/history', function(req, res, next) {

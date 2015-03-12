@@ -15,7 +15,7 @@
 
     <script id="conversationlist" type="x-tmpl-mustache">
       {{#conversations}}
-        <div class="conversation-item" onclick="selectConversation({{id}})">
+        <div class="conversation-item" onclick="selectConversation('{{id}}')">
           {{#targets}}
             <b style="margin-left:0.2em;margin-top:40%;">{{name}}</b><div id="msgcounter{{id}}" style="float:right;"></div>
           {{/targets}}
@@ -30,6 +30,12 @@
           <div class="message-text">{{&messagetext}}</div>
         </div>
       {{/messages}}
+    </script>
+
+    <script id="userstmpl" type="x-tmpl-mustache">
+      {{#users}}
+        <option value="{{name}}">{{completename}}</option>
+      {{/users}}
     </script>
 
     <style>
@@ -60,6 +66,7 @@
       var conversationstmpl;
       var messageshistory;
       var messagetmpl;
+      var userstmpl;
 
       function load() {
 
@@ -67,8 +74,16 @@
 
         startWebSocket();
 
-        //load conversations
-        conversations();
+        //load users
+        loadUsers();
+      }
+
+      function loadUsers() {
+        $.get( "/users/list", function( data ) {
+
+          var rendered = Mustache.render(userstmpl, data);
+          $( "#usersselect" ).html( rendered );
+        });
       }
 
       function parseTemplates() {
@@ -80,6 +95,10 @@
 
         messagetmpl = $("#messagetmpl").html();
         Mustache.parse(messagetmpl);
+
+        userstmpl = $("#userstmpl").html();
+        Mustache.parse(userstmpl);
+
       }
 
       function startWebSocket() {
@@ -91,8 +110,12 @@
 
           socket.on('registered', function (data) {
 
-            if(data.status == 'ok')
-              alert("registrado");
+            if(data.status == 'ok') {
+              loadConversations();
+              $("#username").attr("disabled", true);
+            } else {
+              alert("falhou ao registrar");
+            }
 
           });
 
@@ -132,8 +155,8 @@
         });
       }
 
-      function conversations() {
-        $.post( "/conversations/list", function( data ) {//todo pass username
+      function loadConversations() {
+        $.post( "/conversations/list",{username:$("#username").val()}, function( data ) {//todo pass username
 
           conversations = data.conversations;
 
@@ -211,11 +234,30 @@
             conversation: conversationid
         });
       }
+
+      function createConversation() {
+
+        $.post( "/conversations/create",
+        {
+          username:$("#username").val(),
+          targets: [$("#usersselect").val(), $("#username").val()]
+        },
+        function( data ) {
+          loadConversations();
+        });
+      }
     </script>
 
   </head>
 
   <body onload="load();">
+
+    <label for="usersselect">Users</label>
+    <select id="usersselect">
+    </select>
+    <button onclick="createConversation();">create conversation</button>
+    <hr style="width:100%;">
+    <br clear="all">
 
     <label for="username">Username</label>
     <input id="username" type="text" value="abraao">
