@@ -22,56 +22,69 @@ router.post('/list', function(req, res, next) {//transformar em get
 
 });
 
-function create(req, res, Conversation) {
+function create(req, res, labelname, userstargets) {
 
-  var uid = uuid.v1();
-  var targs = req.body["targets[]"];
-  var userstargets = [];
+  try {
+    var Conversation = mongoose.model("Conversation");
 
-  var data = {
-          label: labelname.trim(),
-          id: uid+"",
-          targets: userstargets
-        };
+    var uid = uuid.v1();
 
-  var convers = new Conversation(data);
+    var data = {
+            label: labelname,
+            id: uid+"",
+            targets: userstargets
+          };
 
-  convers.save(function(err, result) {
+    var convers = new Conversation(data);
 
-    if (err) {
-      console.error(err);
-      return;
-    }
+    convers.save(function(err, result) {
 
-    res.send(result);
-  });
+      if (err) {
+        console.error(err);
+        res.send(err);
+        return;
+      }
+
+      res.send(result);
+    });
+
+  } catch(ex) {
+      console.error(ex);
+  }
 }
 
 router.post('/create', function(req, res, next) {
 
-    var Conversation = mongoose.model("Conversation");
+    try {
+      var Conversation = mongoose.model("Conversation");
 
-    var labelname = "";
+      var labelname = "";
+      var targs = req.body["targets[]"];
+      var userstargets = [];
 
-    for(var i = 0; i < targs.length; i++) {
-      userstargets.push({name:targs[i]});
+      if(req.body.labelname)
+        labelname = req.body.labelname;
 
-      labelname += targs[i] + " ";
-    }
-
-    Conversation.where("label").equals("livia abraao").exec(function(err, result){
-
-      if (err) {
-        console.error(err);
+      for(var i = 0; i < targs.length; i++) {
+        userstargets.push({name:targs[i]});
       }
 
-      if(!result) {
-        create(req, res, Conversation);//if it not find, creates
-      } else {
-        res.send(result);
-      }
+      Conversation.where("targets").equals(targs).exec(function(err, result){
 
-    })
+        if (err) {
+          console.error(err);
+        }
+
+        if(!result || result.length <= 0) {
+          create(req, res, labelname.trim(), userstargets);//if it not find, creates
+        } else {
+          res.send(result);
+        }
+
+      });
+  } catch(ex) {
+    console.log(ex);
+  }
 
 });
 

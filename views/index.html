@@ -16,9 +16,8 @@
     <script id="conversationlist" type="x-tmpl-mustache">
       {{#conversations}}
         <div class="conversation-item" onclick="selectConversation('{{id}}')">
-          {{#targets}}
-            <b style="margin-left:0.2em;margin-top:40%;">{{name}}</b><div id="msgcounter{{id}}" style="float:right;"></div>
-          {{/targets}}
+          <b style="margin-left:0.2em;margin-top:40%;" >{{nameConversation}}</b>
+          <div id="msgcounter{{id}}" style="float:right;"></div>
         </div>
       {{/conversations}}
     </script>
@@ -161,6 +160,25 @@
         $.post( "/conversations/list",{username:$("#username").val()}, function( data ) {//todo pass username
 
           conversations = data.conversations;
+          var usrname = $("#username").val();
+
+          data.nameConversation = function () {
+
+            if(this.label && this.label.length > 0) {
+              return this.label;
+            } else {
+
+              var out = "";
+
+              for(var i = 0; i < this.targets.length; i++) {
+                if(this.targets[i].name != usrname) {
+                  out += this.targets[i].name + " ";
+                }
+              }
+
+              return out.trim();
+            }
+          }
 
           var rendered = Mustache.render(conversationstmpl, data);
           $( "#conversations" ).html( rendered );
@@ -239,9 +257,12 @@
 
       function createConversation() {
 
+        var labelname = $("#labelconversation").val();
+
         $.post( "/conversations/create",
         {
           username:$("#username").val(),
+          labelname: ((labelname) && labelname.length > 0? labelname : null),
           targets: [$("#usersselect").val(), $("#username").val()]
         },
         function( data ) {
@@ -257,6 +278,10 @@
     <label for="usersselect">Users</label>
     <select id="usersselect">
     </select>
+
+    <label for="labelconversation">Label</label>
+    <input type="text" id="labelconversation" >
+
     <button onclick="createConversation();">create conversation</button>
     <hr style="width:100%;">
     <br clear="all">
