@@ -10,6 +10,7 @@ var conversationstmpl;
 var messageshistory;
 var messagetmpl;
 var userstmpl;
+var requeststmpl;
 
 function load() {
 
@@ -44,6 +45,9 @@ function parseTemplates() {
 
   userstmpl = $("#userstmpl").html();
   Mustache.parse(userstmpl);
+
+  requeststmpl = $("#requeststmpl").html();
+  Mustache.parse(requeststmpl);
 
 }
 
@@ -222,5 +226,12 @@ function createConversation() {
   },
   function( data ) {
     loadConversations();
+  });
+}
+
+function requestAddUser() {
+  socket.emit('requestAddUser', {
+      username: $("#username").val(),
+      targetuser:  $("#usersselectgroups").val()
   });
 }

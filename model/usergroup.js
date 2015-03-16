@@ -5,7 +5,8 @@ var mongoose = require('mongoose');
 */
 var UserGroupSchema = new mongoose.Schema({
   username: String,
-  groupname: String
+  groupname: String,
+  owner: String
 });
 
 mongoose.model('UserGroup', UserGroupSchema);

@@ -88,6 +88,15 @@ socketio.on('connection', function (socket) {
   socket.on('chat', function (data) {
     chatroom.receive(data);
   });
+
+  socket.on('requestAddUser', function (data) {
+    chatroom.requestAddUser(data);
+  });
+
+  socket.on('acceptRequest', function (data) {
+    chatroom.acceptRequest(data);
+  });
+
 });
 
 http.listen(3000, function() {

@@ -37,6 +37,19 @@
       {{/users}}
     </script>
 
+    <script id="requeststmpl" type="x-tmpl-mustache">
+      {{#requests}}
+        <div class="message">
+          <div class="message-text">
+            <b>{{username}}</b>
+
+            <button onclick="acceptRequest('{{username}}')">accept</button>
+            <button onclick="rejectRequest('{{username}}')">cancel</button>
+          </div>
+        </div>
+      {{/requests}}
+    </script>
+
     <style>
       .conversation-item {
         margin-top: 0.5em;
@@ -105,18 +118,11 @@
 
     <div id="usersgroupsdiv" style="display:none;">
 
-      <!-- all groups to be selected -->
-      <label for="selectgroups">Group</label>
-      <select id="selectgroups">
-      </select>
-      <br clear="all">
-      <br clear="all">
-
       <!-- all users to be selected -->
       <label for="usersselectgroups">Users</label>
       <select id="usersselectgroups">
       </select>
-      <button onclick="addUser();">Adicionar Usuario</button>
+      <button onclick="addUserToGroup();">Adicionar Usuario</button>
 
       <br clear="all">
       <br clear="all">
@@ -135,6 +141,11 @@
       <br clear="all">
       <div id="outputsearch" style="height:30%;width:30%;overflow: auto;padding: 1em;"></div>
 
+    </div>
+
+    <div id="requestsdiv" style="display:none;">
+      <div id="requestslist" style="height:30%;width:30%;overflow: auto;padding: 1em;">
+      </div>
     </div>
 
   </body>
