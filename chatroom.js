@@ -1,4 +1,62 @@
 var mongoose = require('mongoose');
+var uuid = require('uuid');
+
+function saveUserGroup(usergrp, callback) {
+  usergrp.save(function(err, reslt) {//save request
+
+    if(err)
+      console.error(err);
+    else
+      callback.call(this);
+
+  });//end save
+}
+
+function createConversation(userssocks, labelname, userstargets) {
+
+  try {
+    var Conversation = mongoose.model("Conversation");
+
+    var uid = uuid.v1();
+
+    var data = {
+            label: labelname,
+            id: uid+"",
+            targets: userstargets
+          };
+
+    var convers = new Conversation(data);
+
+    convers.save(function(err, result) {
+
+      if (err) {
+        console.error(err);
+        res.send(err);
+        return;
+      }
+
+      console.log(userstargets);
+      console.log("for");
+
+      for(ic = 0; ic < userstargets.length; ic++) {
+
+        sock = null;
+
+
+        console.log(userstargets[ic]);
+
+        if(userstargets[ic])
+          sock = userssocks[userstargets[ic].name];
+
+        if(sock)
+          sock.emit('loadConversations');
+      }
+    });
+
+  } catch(ex) {
+      console.error(ex);
+  }
+}
 
 module.exports = {
 
@@ -32,7 +90,8 @@ module.exports = {
       {
         message: data.message,
         conversation:  data.conversation,
-        sender: data.sender
+        sender: data.sender,
+        created: Date.now()
       });
   },
 
@@ -83,13 +142,13 @@ module.exports = {
     var sourceSocket = this.users[data.username];
     var targSocket = this.users[data.owner];
 
-    var usergrp = new GroupRequest({
+    var usergrp = new UserGroup({
       username: data.username,
       groupname: groupname,
       owner: data.owner
     });
 
-    UserGroup.find({username:data.username, owner: data.owner},function (err, result) {
+    UserGroup.find({username:data.username, owner: data.owner}, function (err, result) {
 
       if (err) {
         console.error(err);
@@ -97,20 +156,27 @@ module.exports = {
       }
 
       if(!result || result.length <= 0) {
-        usergrp.save(function(err, reslt) {//save request
-          if(err) console.error(err);
+        saveUserGroup(usergrp, function(){ //creates group 1
 
-          if(sourceSocket) { //send event to target
-            sourceSocket.emit('reloadUsers');
-          }//end if
+          var usergrp2 = new UserGroup({
+            username: data.owner,
+            groupname: groupname,
+            owner: data.username
+          });
 
-          if(targSocket) { //send event to target
-            targSocket.emit('reloadUsers');
-          }//end if
+          saveUserGroup(usergrp2, function() {
+            GroupRequest.remove({username:data.username, targetuser: data.owner}, function(err,res){});
 
-          GroupRequest.remove({username:data.username, targetuser: data.owner}, function(err,res){});
+            if(sourceSocket) { //send event to target
+              sourceSocket.emit('reloadUsers');
+            }//end if
 
-        });//end save
+            if(targSocket) { //send event to target
+              targSocket.emit('reloadUsers');
+            }//end if
+
+          })
+        });
       } else {
         GroupRequest.remove({username:data.username, targetuser: data.owner}, function(err,res){});
       }
@@ -121,6 +187,41 @@ module.exports = {
   rejectRequest: function(data) {
     var GroupRequest = mongoose.model("GroupRequest");
     GroupRequest.remove({username:data.username, targetuser: data.owner}, function(err,res){});
+  },
+
+  createConversation: function(data) {
+
+        try {
+          var Conversation = mongoose.model("Conversation");
+
+          var labelname = "";
+          var targs = data.targets;
+          var userstargets = [];
+          var userssocks = this.users;
+
+          if(data.labelname)
+            labelname = data.labelname;
+
+          for(var i = 0; i < targs.length; i++) {
+            userstargets.push({name:targs[i]});
+          }
+
+          Conversation.where("targets").equals(targs).exec(function(err, result){
+
+            if (err) {
+              console.error(err);
+            }
+
+            console.log(userstargets);
+
+            if(!result || result.length <= 0) {
+              createConversation(userssocks, labelname.trim(), userstargets);//if it not find, creates
+            }
+
+          });
+      } catch(ex) {
+        console.log(ex);
+      }
   },
 
   save: function(data) {//will save async in mongodb

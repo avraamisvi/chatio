@@ -18,19 +18,7 @@ function load() {
 
   startWebSocket();
 
-  //load users
   loadUsers();
-}
-
-function loadUsers() {
-  $.get( "/users/list", function( data ) {
-
-    var rendered = Mustache.render(userstmpl, data);
-    $( "#usersselect" ).html( rendered );
-    $( "#usersselectgroups" ).html( rendered );
-    $( "#username" ).html( rendered );
-
-  });
 }
 
 function parseTemplates() {
@@ -51,6 +39,9 @@ function parseTemplates() {
 
 }
 
+/*
+  Inicializa a conexao com o websocket
+*/
 function startWebSocket() {
     socket = io('http://localhost:3000');
 
@@ -61,14 +52,49 @@ function startWebSocket() {
     socket.on('registered', function (data) {
 
       if(data.status == 'ok') {
-        loadConversations();
         $("#username").attr("disabled", true);
+        loadConversations();
+        loadRequests();
+        loadMyUsers();
       } else {
         alert("falhou ao registrar");
       }
 
     });
 
+    socket.on('requestAddUser', function (data) {
+      loadRequests();
+    });
+
+    socket.on('reloadUsers', function (data) {
+      loadRequests();
+      loadUsers();
+      loadMyUsers();
+    });
+
+    socket.on('loadConversations', function (data) {
+      loadConversations();
+    });
+
+}
+
+function loadUsers() {
+  $.get( "/users/list", function( data ) {
+
+    var rendered = Mustache.render(userstmpl, data);
+    $( "#usersselectgroups" ).html( rendered );
+    $( "#username" ).html( rendered );
+
+  });
+}
+
+function loadMyUsers() {
+
+  $.get( "/users/myusers",{username:$("#username").val()}, function( data ) {
+
+    var rendered = Mustache.render(userstmpl, data);
+    $( "#usersselect" ).html( rendered );
+  });
 }
 
 function filter(filt) {
@@ -106,7 +132,7 @@ function loadHistory() {
     }
 
     var rendered = Mustache.render(messageshistory, data);
-    $( "#output" ).prepend( rendered );
+    $( "#output" ).html( rendered );
   });
 }
 
@@ -169,18 +195,18 @@ function createMessage(data) {
       return processMessageText(this.message);
     };
 
-    var rendered = Mustache.render(messagetmpl, data);
-
     data.date = function(){
       var dat = new Date(this.created);
       return dat.getDate() + "-" + dat.getMonth() + "-" + dat.getFullYear();
     }
 
+    var rendered = Mustache.render(messagetmpl, data);
     $( "#output" ).append( rendered );
 
   }
 }
 
+//cria link com acao customizavel, ou seja, pode ser link para mantis, track ou outra ferramenta.
 function processMessageText(message){
   message = message.replace(/#.\w*/g, function fhref(x){
     ref = "<a href='"+x+"' onclick='filter(\""+x.substring(1)+"\")'>"+x+"</a>";
@@ -218,14 +244,20 @@ function createConversation() {
 
   var labelname = $("#labelconversation").val();
 
-  $.post( "/conversations/create",
-  {
-    username:$("#username").val(),
+  socket.emit('createConversation', {
+    username: $("#username").val(),
     labelname: ((labelname) && labelname.length > 0? labelname : null),
     targets: [$("#usersselect").val(), $("#username").val()]
-  },
-  function( data ) {
-    loadConversations();
+  });
+}
+
+
+function loadRequests() {
+  $.get( "/groups/requests",{username: $("#username").val()}, function( data ) {
+
+    var rendered = Mustache.render(requeststmpl, data);
+    $( "#requestslist" ).html( rendered );
+
   });
 }
 
@@ -233,5 +265,19 @@ function requestAddUser() {
   socket.emit('requestAddUser', {
       username: $("#username").val(),
       targetuser:  $("#usersselectgroups").val()
+  });
+}
+
+function acceptRequest(username) {
+  socket.emit('acceptRequest', {
+      owner: $("#username").val(),
+      username: username
+  });
+}
+
+function rejectRequest(username) {
+  socket.emit('rejectRequest', {
+      owner: $("#username").val(),
+      username: username
   });
 }

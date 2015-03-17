@@ -73,6 +73,7 @@
         document.getElementById("usersgroupsdiv").style.display="none";
         document.getElementById("searchdiv").style.display="none";
         document.getElementById("chatdiv").style.display="none";
+        document.getElementById("requestsdiv").style.display="none";
 
         document.getElementById(id).style.display="block";
       }
@@ -85,6 +86,7 @@
     <button onclick="show('chatdiv');">CHAT</button>
     <button onclick="show('usersgroupsdiv');">USERS GROUPS</button>
     <button onclick="show('searchdiv');">SEARCH</button>
+    <button onclick="show('requestsdiv');">REQUESTS</button>
 
     <hr style="width:100%;">
     <br clear="all">
@@ -122,7 +124,7 @@
       <label for="usersselectgroups">Users</label>
       <select id="usersselectgroups">
       </select>
-      <button onclick="addUserToGroup();">Adicionar Usuario</button>
+      <button onclick="requestAddUser();">Adicionar Usuario</button>
 
       <br clear="all">
       <br clear="all">

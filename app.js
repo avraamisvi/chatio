@@ -10,6 +10,7 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var conversations = require('./routes/conversations');
 var messages = require('./routes/messages');
+var groups = require('./routes/groups');
 
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/chatio');
@@ -42,6 +43,7 @@ app.use('/', routes);
 app.use('/users', users);
 app.use('/conversations', conversations);
 app.use('/messages', messages);
+app.use('/groups', groups);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -95,6 +97,14 @@ socketio.on('connection', function (socket) {
 
   socket.on('acceptRequest', function (data) {
     chatroom.acceptRequest(data);
+  });
+
+  socket.on('rejectRequest', function (data) {
+    chatroom.rejectRequest(data);
+  });
+
+  socket.on('createConversation', function (data) {
+    chatroom.createConversation(data);
   });
 
 });

@@ -22,7 +22,7 @@ router.post('/list', function(req, res, next) {//transformar em get
 
 });
 
-function create(req, res, labelname, userstargets) {
+/*function create(req, res, labelname, userstargets) {
 
   try {
     var Conversation = mongoose.model("Conversation");
@@ -86,6 +86,6 @@ router.post('/create', function(req, res, next) {
     console.log(ex);
   }
 
-});
+});*/
 
 module.exports = router;
