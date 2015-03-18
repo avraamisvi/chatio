@@ -97,9 +97,6 @@ function loadMyUsers() {
   });
 }
 
-function filter(filt) {
-
-}
 
 function selectConversation(id){
 
@@ -279,5 +276,30 @@ function rejectRequest(username) {
   socket.emit('rejectRequest', {
       owner: $("#username").val(),
       username: username
+  });
+}
+
+function searchMessage() {
+
+  var conversationid = "";
+  if($("#useconversationchk").val()) {
+    conversationid = conversationSelected.id;
+  }
+
+  var qrytxt = $("#querytext").val();
+
+  $.get( "/messages/search",{id:conversationid, query: qrytxt}, function( data ) {
+
+    data.messagetext = function() {
+      return processMessageText(this.text);
+    };
+
+    data.date = function(){
+      var dat = new Date(this.created);
+      return dat.getDate() + "-" + dat.getMonth() + "-" + dat.getFullYear();
+    }
+
+    var rendered = Mustache.render(messageshistory, data);
+    $( "#outputsearch" ).html( rendered );
   });
 }
